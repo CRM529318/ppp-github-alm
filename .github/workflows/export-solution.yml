@@ -1,1 +1,45 @@
+name: Export Power Platform Solution
 
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  export-solution:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Export Unmanaged Solution
+        uses: microsoft/powerplatform-actions/export-solution@v1
+        with:
+          environment-url: ${{ secrets.PP_ENV_URL }}
+          client-id: ${{ secrets.PP_CLIENT_ID }}
+          client-secret: ${{ secrets.PP_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.PP_TENANT_ID }}
+          solution-name: MySolution
+          solution-output-file: solutions/MySolution/unmanaged/MySolution_unmanaged.zip
+          managed: false
+
+      - name: Export Managed Solution
+        uses: microsoft/powerplatform-actions/export-solution@v1
+        with:
+          environment-url: ${{ secrets.PP_ENV_URL }}
+          client-id: ${{ secrets.PP_CLIENT_ID }}
+          client-secret: ${{ secrets.PP_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.PP_TENANT_ID }}
+          solution-name: MySolution
+          solution-output-file: solutions/MySolution/managed/MySolution_managed.zip
+          managed: true
+
+      - name: Commit solution files
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "github Actions"
+          git add .
+          git commit -m "Export Power Platform solution (managed & unmanaged)"
+          git push
