@@ -1,46 +1,45 @@
-name: Export and Unpack Power Platform Solution
+name: Export Power Platform Solution
 
 on:
   workflow_dispatch:
-    inputs:
-      solutionName:
-        description: 'Solution Name'
-        required: true
-      environmentUrl:
-        description: 'Environment URL'
-        required: true
+  push:
+    branches:
+      - main
 
 jobs:
-  export-unpack:
+  export-solution:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Export unmanaged solution
+      - name: Export Unmanaged Solution
         uses: microsoft/powerplatform-actions/export-solution@v1
         with:
-          environment-url: ${{ inputs.environmentUrl }}
+          environment-url: ${{ secrets.PP_ENV_URL }}
           client-id: ${{ secrets.PP_CLIENT_ID }}
           client-secret: ${{ secrets.PP_CLIENT_SECRET }}
           tenant-id: ${{ secrets.PP_TENANT_ID }}
-          solution-name: ${{ inputs.solutionName }}
-          solution-output-file: solution.zip
+          solution-name: MySolution
+          solution-output-file: solutions/MySolution/unmanaged/MySolution_unmanaged.zip
           managed: false
 
-      - name: Unpack solution
-        uses: microsoft/powerplatform-actions/unpack-solution@v1
+      - name: Export Managed Solution
+        uses: microsoft/powerplatform-actions/export-solution@v1
         with:
-          solution-file: solution.zip
-          solution-folder: solutions/${{ inputs.solutionName }}/src
-          solution-type: Unmanaged
-          overwrite-files: true
+          environment-url: ${{ secrets.PP_ENV_URL }}
+          client-id: ${{ secrets.PP_CLIENT_ID }}
+          client-secret: ${{ secrets.PP_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.PP_TENANT_ID }}
+          solution-name: MySolution
+          solution-output-file: solutions/MySolution/managed/MySolution_managed.zip
+          managed: true
 
-      - name: Commit unpacked solution
+      - name: Commit solution files
         run: |
           git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
+          git config --global user.name "github Actions"
           git add .
-          git commit -m "Unpacked solution ${{ inputs.solutionName }}"
+          git commit -m "Export Power Platform solution (managed & unmanaged)"
           git push
