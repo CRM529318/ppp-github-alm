@@ -1,0 +1,46 @@
+name: Export and Unpack Power Platform Solution
+
+on:
+  workflow_dispatch:
+    inputs:
+      solutionName:
+        description: 'Solution Name'
+        required: true
+      environmentUrl:
+        description: 'Environment URL'
+        required: true
+
+jobs:
+  export-unpack:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Export unmanaged solution
+        uses: microsoft/powerplatform-actions/export-solution@v1
+        with:
+          environment-url: ${{ inputs.environmentUrl }}
+          client-id: ${{ secrets.PP_CLIENT_ID }}
+          client-secret: ${{ secrets.PP_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.PP_TENANT_ID }}
+          solution-name: ${{ inputs.solutionName }}
+          solution-output-file: solution.zip
+          managed: false
+
+      - name: Unpack solution
+        uses: microsoft/powerplatform-actions/unpack-solution@v1
+        with:
+          solution-file: solution.zip
+          solution-folder: solutions/${{ inputs.solutionName }}/src
+          solution-type: Unmanaged
+          overwrite-files: true
+
+      - name: Commit unpacked solution
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "Unpacked solution ${{ inputs.solutionName }}"
+          git push
