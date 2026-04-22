@@ -1,45 +1,46 @@
-name: Export Power Platform Solution
+name: Export and Unpack Power Platform Solution
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+    inputs:
+      solutionName:
+        description: 'Solution Name'
+        required: true
+      environmentUrl:
+        description: 'Environment URL'
+        required: true
 
 jobs:
-  export-solution:
+  export-unpack:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Export Unmanaged Solution
+      - name: Export unmanaged solution
         uses: microsoft/powerplatform-actions/export-solution@v1
         with:
-          environment-url: ${{ secrets.PP_ENV_URL }}
+          environment-url: ${{ inputs.environmentUrl }}
           client-id: ${{ secrets.PP_CLIENT_ID }}
           client-secret: ${{ secrets.PP_CLIENT_SECRET }}
           tenant-id: ${{ secrets.PP_TENANT_ID }}
-          solution-name: MySolution
-          solution-output-file: solutions/MySolution/unmanaged/MySolution_unmanaged.zip
+          solution-name: ${{ inputs.solutionName }}
+          solution-output-file: solution.zip
           managed: false
 
-      - name: Export Managed Solution
-        uses: microsoft/powerplatform-actions/export-solution@v1
+      - name: Unpack solution
+        uses: microsoft/powerplatform-actions/unpack-solution@v1
         with:
-          environment-url: ${{ secrets.PP_ENV_URL }}
-          client-id: ${{ secrets.PP_CLIENT_ID }}
-          client-secret: ${{ secrets.PP_CLIENT_SECRET }}
-          tenant-id: ${{ secrets.PP_TENANT_ID }}
-          solution-name: MySolution
-          solution-output-file: solutions/MySolution/managed/MySolution_managed.zip
-          managed: true
+          solution-file: solution.zip
+          solution-folder: solutions/${{ inputs.solutionName }}/src
+          solution-type: Unmanaged
+          overwrite-files: true
 
-      - name: Commit solution files
+      - name: Commit unpacked solution
         run: |
           git config --global user.email "github-actions@github.com"
-          git config --global user.name "github Actions"
+          git config --global user.name "GitHub Actions"
           git add .
-          git commit -m "Export Power Platform solution (managed & unmanaged)"
+          git commit -m "Unpacked solution ${{ inputs.solutionName }}"
           git push
